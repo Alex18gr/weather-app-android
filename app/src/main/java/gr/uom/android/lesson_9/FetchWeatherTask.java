@@ -58,7 +58,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
         final String OWM_MIN = "min";
         final String OWM_DESCRIPTION = "main";
         final String OWM_ICON = "icon";
-        final String OWM_CITY = "city";
+        final String OWM_CITY_OBJ = "city";
         final String OWM_CITY_NAME = "name";
 
         JSONObject forecastJson = new JSONObject(forecastJsonStr);
@@ -104,9 +104,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
             double low = temperatureObject.getDouble(OWM_MIN);
 
             // get city data
-            // JSONObject weatherCity = dayForecast.getJSONObject(OWM_CITY);
-            //String cityName = dayForecast.getString(OWM_CITY_NAME);
-            //Log.d(TAG, "getWeatherDataFromJson: " + cityName);
+            JSONObject weatherCity = forecastJson.getJSONObject(OWM_CITY_OBJ);
+            String cityName = weatherCity.getString("name");
+            Log.d(TAG, "getWeatherDataFromJson: " + cityName);
 
             highAndLow = formatHighLows(high, low);
             List<String> data = new ArrayList<>();
@@ -115,7 +115,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
             data.add(high + "");
             data.add(low + "");
             data.add("http://openweathermap.org/img/w/" + icon + ".png");
-            //data.add(cityName);
+            data.add(cityName);
             resultList.add(data);
             //resultStrings.add(day + " - " + description + " - " + highAndLow);
 
@@ -253,7 +253,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
         //fragment.setWeatherText(result);
         String resultString = result.get(0) + " - " + result.get(1) + " - " + result.get(2) + "/" + result.get(3);
         weatherFragment.setWeatherString(resultString);
-        //weatherFragment.setLocationString(result.get(5));
+        weatherFragment.setLocationString(result.get(5));
         new DownloadImageTask().execute(result.get(4));
 
     }
