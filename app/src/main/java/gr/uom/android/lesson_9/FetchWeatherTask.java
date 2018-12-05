@@ -1,10 +1,14 @@
 package gr.uom.android.lesson_9;
 
+import android.app.ProgressDialog;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
+import android.widget.ImageView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,7 +24,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FetchWeatherTask extends AsyncTask<String, Void, String> {
+public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
+
+    private static final String TAG = "FetchWeatherTask";
 
     private final String LOG_TAG = FetchWeatherTask.class.getSimpleName();
 
@@ -41,7 +47,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
         return roundedHigh + "/" + roundedLow;
     }
 
-    private List<String> getWeatherDataFromJson(String forecastJsonStr, int numDays)
+    private List<List<String>> getWeatherDataFromJson(String forecastJsonStr, int numDays)
             throws JSONException {
 
         // These are the names of the JSON objects that need to be extracted.
@@ -51,6 +57,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
         final String OWM_MAX = "max";
         final String OWM_MIN = "min";
         final String OWM_DESCRIPTION = "main";
+        final String OWM_ICON = "icon";
+        final String OWM_CITY = "city";
+        final String OWM_CITY_NAME = "name";
 
         JSONObject forecastJson = new JSONObject(forecastJsonStr);
         JSONArray weatherArray = forecastJson.getJSONArray(OWM_LIST);
@@ -64,12 +73,13 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
         // now we work exclusively in UTC
         dayTime = new Time();
 
-        List<String> resultStrings = new ArrayList<>();
+        List<List<String>> resultList = new ArrayList<>();
         for (int i = 0; i < weatherArray.length(); i++) {
             // For now, using the format "Day, description, hi/low"
             String day;
             String description;
             String highAndLow;
+            String icon;
 
             // Get the JSON object representing the day
             JSONObject dayForecast = weatherArray.getJSONObject(i);
@@ -85,6 +95,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
             // description is in a child array called "weather", which is 1 element long.
             JSONObject weatherObject = dayForecast.getJSONArray(OWM_WEATHER).getJSONObject(0);
             description = weatherObject.getString(OWM_DESCRIPTION);
+            icon = weatherObject.getString(OWM_ICON);
 
             // Temperatures are in a child object called "temp".  Try not to name variables
             // "temp" when working with temperature.  It confuses everybody.
@@ -92,19 +103,51 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
             double high = temperatureObject.getDouble(OWM_MAX);
             double low = temperatureObject.getDouble(OWM_MIN);
 
+            // get city data
+            // JSONObject weatherCity = dayForecast.getJSONObject(OWM_CITY);
+            //String cityName = dayForecast.getString(OWM_CITY_NAME);
+            //Log.d(TAG, "getWeatherDataFromJson: " + cityName);
+
             highAndLow = formatHighLows(high, low);
-            resultStrings.add(day + " - " + description + " - " + highAndLow);
+            List<String> data = new ArrayList<>();
+            data.add(day);
+            data.add(description);
+            data.add(high + "");
+            data.add(low + "");
+            data.add("http://openweathermap.org/img/w/" + icon + ".png");
+            //data.add(cityName);
+            resultList.add(data);
+            //resultStrings.add(day + " - " + description + " - " + highAndLow);
+
+
         }
 
-        for (String s : resultStrings) {
+        for (List<String> s : resultList) {
+            String resultString = s.get(0) + " - " + s.get(1) + " - " + s.get(2) + "/" + s.get(3);
             Log.v(LOG_TAG, "Forecast entry: " + s);
         }
-        return resultStrings;
+        return resultList;
 
     }
 
+    public Bitmap getBitmap(String bitmapUrl)
+    {
+        try
+        {
+            URL url = new URL(bitmapUrl);
+            return BitmapFactory.decodeStream(url.openConnection().getInputStream());
+        }
+        catch(Exception ex) {
+            Log.e(TAG, "getBitmap: ", ex);
+            return null;}
+    }
+
+    private String getIconLink(String description) {
+        return "link";
+    }
+
     @Override
-    protected String doInBackground(String... params) {
+    protected List<String> doInBackground(String... params) {
 
         // These two need to be declared outside the try/catch
         // so that they can be closed in the finally block.
@@ -131,7 +174,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
             final String apiKeyParam = "APPID";
 
             Uri builtUri = Uri.parse(baseUrl).buildUpon()
-                    .appendQueryParameter(queryParam, "734077") //code for thessaloniki
+                    //.appendQueryParameter(queryParam, "734077") //code for thessaloniki
+                    .appendQueryParameter(queryParam, "2643743") //code for london
+
                     .appendQueryParameter(formatParam, weatherFormat)
                     .appendQueryParameter(unitsParam, units)
                     .appendQueryParameter(daysParam, Integer.toString(numDays))
@@ -188,6 +233,9 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
             }
         }
         try {
+
+            List<String> data = getWeatherDataFromJson(forecastJsonStr, numDays).get(0);
+
             return getWeatherDataFromJson(forecastJsonStr, numDays).get(0);
         } catch (JSONException e) {
             Log.e(LOG_TAG, e.getMessage(), e);
@@ -199,12 +247,14 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
     }
 
     @Override
-    protected void onPostExecute(String result) {
+    protected void onPostExecute(List<String> result) {
         Log.d(LOG_TAG, "onPostExecute: " + result);
 
         //fragment.setWeatherText(result);
-        weatherFragment.setWeatherString(result);
-
+        String resultString = result.get(0) + " - " + result.get(1) + " - " + result.get(2) + "/" + result.get(3);
+        weatherFragment.setWeatherString(resultString);
+        //weatherFragment.setLocationString(result.get(5));
+        new DownloadImageTask().execute(result.get(4));
 
     }
 
@@ -213,6 +263,26 @@ public class FetchWeatherTask extends AsyncTask<String, Void, String> {
         // it must be converted to milliseconds in order to be converted to valid date.
         SimpleDateFormat shortenedDateFormat = new SimpleDateFormat("dd MM YYYY");
         return shortenedDateFormat.format(time);
+    }
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", "image download error");
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+        protected void onPostExecute(Bitmap result) {
+            weatherFragment.setWeatherIconFromBitmap(result);
+        }
     }
 
 
