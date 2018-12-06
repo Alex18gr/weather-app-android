@@ -251,7 +251,7 @@ public class FetchWeatherTask extends AsyncTask<String, Void, List<String>> {
         Log.d(LOG_TAG, "onPostExecute: " + result);
 
         //fragment.setWeatherText(result);
-        String resultString = result.get(0) + " - " + result.get(1) + " - " + result.get(2) + "/" + result.get(3);
+        String resultString = result.get(1) + " - " + result.get(2) + "/" + result.get(3);
         weatherFragment.setWeatherString(resultString);
         weatherFragment.setLocationString(result.get(5));
         new DownloadImageTask().execute(result.get(4));

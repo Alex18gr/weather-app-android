@@ -14,7 +14,7 @@
         android:layout_marginTop="8dp"
         android:text="TextView"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/fragment" />
+        app:layout_constraintTop_toBottomOf="@+id/weatherFragment" />
 
     <EditText
         android:id="@+id/txtName"
@@ -43,7 +43,7 @@
         app:layout_constraintTop_toBottomOf="@+id/txtName" />
 
     <fragment
-        android:id="@+id/fragment"
+        android:id="@+id/weatherFragment"
         android:name="gr.uom.android.lesson_9.WeatherFragment"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
